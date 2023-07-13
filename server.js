@@ -71,7 +71,7 @@ app.post('/login', (req, res) => {
   }
 
   // simula user na database
-  const user = { id: 1, username: 'admin', password: '$2a$10$r4kTuvKFuNUnjLdFovAD8eMnX1aUJmjKjcvn/0KlBZmMXxEjwKZ12' };
+  const user = { id: 1, username: 'admin', password: '' };
 
   // compara password hash
   bcrypt.compare(password, user.password, (err, result) => {
