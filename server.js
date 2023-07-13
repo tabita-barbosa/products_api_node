@@ -1,4 +1,4 @@
-// Import required packages
+// import dos pacotes
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,12 +7,12 @@ const knex = require('knex');
 
 require('dotenv').config();
 
-// Create the Express app
+// cria express app
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Create the SQLite3 database connection
+// cria conexão com SQLite3 database 
 const db = knex({
   client: 'sqlite3',
   connection: {
@@ -21,7 +21,7 @@ const db = knex({
   useNullAsDefault: true,
 });
 
-// Create the products table if it doesn't exist
+// cria tabela se ela não existir
 db.schema
   .hasTable('products')
   .then((exists) => {
@@ -41,10 +41,10 @@ db.schema
     console.error('Error creating products table:', error);
   });
 
-// Define JWT secret
+// define segredo JWT 
 const jwtSecret = process.env.JWT_SECRET;
 
-// Authenticate middleware
+// autentica middleware
 function authenticate(req, res, next) {
   const token = req.header('Authorization');
 
@@ -65,15 +65,15 @@ function authenticate(req, res, next) {
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  // Check if username and password are provided
+  // checa se user e senha foram passados
   if (!username || !password) {
     return res.status(400).json({ message: 'Missing username or password.' });
   }
 
-  // Simulating user retrieval from the database
-  const user = { id: 1, username: 'admin', password: 'admin' };
+  // simula user na database
+  const user = { id: 1, username: 'admin', password: '$2a$10$r4kTuvKFuNUnjLdFovAD8eMnX1aUJmjKjcvn/0KlBZmMXxEjwKZ12' };
 
-  // Compare password hash
+  // compara password hash
   bcrypt.compare(password, user.password, (err, result) => {
     if (result) {
       const token = jwt.sign({ id: user.id, username: user.username }, jwtSecret, { expiresIn: '1h' });
@@ -84,9 +84,9 @@ app.post('/login', (req, res) => {
   });
 });
 
-// Products routes
+// rotas dos produtos
 app.get('/products', authenticate, (req, res) => {
-  // Retrieve all products from the database
+  // retorna todos os produtos
   db.select('*')
     .from('products')
     .then((products) => {
@@ -100,7 +100,7 @@ app.get('/products', authenticate, (req, res) => {
 app.get('/products/:id', authenticate, (req, res) => {
   const { id } = req.params;
 
-  // Retrieve a product by ID from the database
+  // retorna produto por id
   db.select('*')
     .from('products')
     .where({ id })
@@ -120,7 +120,7 @@ app.get('/products/:id', authenticate, (req, res) => {
 app.post('/products', authenticate, (req, res) => {
   const { name, price, quantity } = req.body;
 
-  // Insert a new product into the database
+  // add novo produto
   db('products')
     .insert({ name, price, quantity })
     .then(() => {
@@ -135,7 +135,7 @@ app.put('/products/:id', authenticate, (req, res) => {
   const { id } = req.params;
   const { name, price, quantity } = req.body;
 
-  // Update a product in the database
+  // atualiza produto
   db('products')
     .where({ id })
     .update({ name, price, quantity })
@@ -154,7 +154,7 @@ app.put('/products/:id', authenticate, (req, res) => {
 app.delete('/products/:id', authenticate, (req, res) => {
   const { id } = req.params;
 
-  // Delete a product from the database
+  // deleta produto
   db('products')
     .where({ id })
     .del()
@@ -170,7 +170,7 @@ app.delete('/products/:id', authenticate, (req, res) => {
     });
 });
 
-// Start the server
+// starta o server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
