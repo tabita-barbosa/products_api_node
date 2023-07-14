@@ -1,4 +1,3 @@
-// import dos pacotes
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,21 +6,18 @@ const knex = require('knex');
 
 require('dotenv').config();
 
-// cria express app
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// cria conexão com SQLite3 database 
 const db = knex({
-  client: 'sqlite3',
+  client: 'pg',
   connection: {
-    filename: './supermarket.db',
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
   },
-  useNullAsDefault: true,
 });
 
-// cria tabela se ela não existir
 db.schema
   .hasTable('products')
   .then((exists) => {
@@ -41,10 +37,8 @@ db.schema
     console.error('Error creating products table:', error);
   });
 
-// define segredo JWT 
 const jwtSecret = process.env.JWT_SECRET;
 
-// autentica middleware
 function authenticate(req, res, next) {
   const token = req.header('Authorization');
 
@@ -61,19 +55,15 @@ function authenticate(req, res, next) {
   }
 }
 
-// Login route
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  // checa se user e senha foram passados
   if (!username || !password) {
     return res.status(400).json({ message: 'Missing username or password.' });
   }
 
-  // simula user na database
-  const user = { id: 1, username: 'admin', password: '' };
+  const user = { id: 1, username: 'supermarket_1x88_user', password: 'jQUXokWM6J3sopZLICfDM58KAvyvrcpC' };
 
-  // compara password hash
   bcrypt.compare(password, user.password, (err, result) => {
     if (result) {
       const token = jwt.sign({ id: user.id, username: user.username }, jwtSecret, { expiresIn: '1h' });
@@ -84,9 +74,9 @@ app.post('/login', (req, res) => {
   });
 });
 
-// rotas dos produtos
+// Products routes
 app.get('/products', authenticate, (req, res) => {
-  // retorna todos os produtos
+  // Retrieve all products from the database
   db.select('*')
     .from('products')
     .then((products) => {
@@ -100,7 +90,6 @@ app.get('/products', authenticate, (req, res) => {
 app.get('/products/:id', authenticate, (req, res) => {
   const { id } = req.params;
 
-  // retorna produto por id
   db.select('*')
     .from('products')
     .where({ id })
@@ -120,7 +109,6 @@ app.get('/products/:id', authenticate, (req, res) => {
 app.post('/products', authenticate, (req, res) => {
   const { name, price, quantity } = req.body;
 
-  // add novo produto
   db('products')
     .insert({ name, price, quantity })
     .then(() => {
@@ -135,12 +123,11 @@ app.put('/products/:id', authenticate, (req, res) => {
   const { id } = req.params;
   const { name, price, quantity } = req.body;
 
-  // atualiza produto
   db('products')
     .where({ id })
     .update({ name, price, quantity })
     .then((count) => {
-      if (count > 0) {
+      if (count) {
         res.json({ message: 'Product updated successfully.' });
       } else {
         res.status(404).json({ message: 'Product not found.' });
@@ -154,12 +141,11 @@ app.put('/products/:id', authenticate, (req, res) => {
 app.delete('/products/:id', authenticate, (req, res) => {
   const { id } = req.params;
 
-  // deleta produto
   db('products')
     .where({ id })
     .del()
     .then((count) => {
-      if (count > 0) {
+      if (count) {
         res.json({ message: 'Product deleted successfully.' });
       } else {
         res.status(404).json({ message: 'Product not found.' });
@@ -170,8 +156,7 @@ app.delete('/products/:id', authenticate, (req, res) => {
     });
 });
 
-// starta o server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server listening on port ${port}`);
 });
