@@ -5,7 +5,7 @@
 exports.seed = async function(knex) {
     // Deletes ALL existing entries
     await knex('products').del()
-    await knex('produtos').insert([
+    await knex('products').insert([
         { id: 1, name: "Arroz parboilizado 5Kg", price: 25.00, quantity: 1  },
         { id: 2, name: "Maionese 250gr", price: 7.20, quantity: 2 },
         { id: 3, name: "Iogurte Natural 200ml", price: 2.50, quantity: 3 },

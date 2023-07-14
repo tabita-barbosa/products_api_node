@@ -2,7 +2,8 @@
 const express = require('express');
 const cors = require('cors');
 const knex = require('knex');
-
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // Create the Express app
@@ -18,6 +19,102 @@ const db = knex({
   },
   useNullAsDefault: true,
 });
+
+// Create the users table if it doesn't exist
+db.schema
+  .hasTable('users')
+  .then((exists) => {
+    if (!exists) {
+      return db.schema.createTable('users', (table) => {
+        table.increments('id').primary();
+        table.string('username').notNullable();
+        table.string('password').notNullable();
+      });
+    }
+  })
+  .then(() => {
+    console.log('Users table created');
+  })
+  .catch((error) => {
+    console.error('Error creating users table:', error);
+  });
+
+// Register a new user
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+
+  // Validate request body
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required.' });
+  }
+
+  // Hash the password
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  // Insert the user into the database
+  db('users')
+    .insert({ username, password: hashedPassword })
+    .then(() => {
+      res.status(201).json({ message: 'User registered successfully.' });
+    })
+    .catch((error) => {
+      res.status(500).json({ message: 'Error registering user.' });
+    });
+});
+
+// User login
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Validate request body
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required.' });
+  }
+
+  // Find the user by username in the database
+  db.select('*')
+    .from('users')
+    .where({ username })
+    .first()
+    .then((user) => {
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid username or password.' });
+      }
+
+      // Compare the provided password with the hashed password in the database
+      const isPasswordValid = bcrypt.compareSync(password, user.password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Invalid username or password.' });
+      }
+
+      // Generate a JWT token
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+      res.json({ token });
+    })
+    .catch((error) => {
+      res.status(500).json({ message: 'Error logging in.' });
+    });
+});
+
+// Middleware to verify JWT token
+function authenticateToken(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Token not found.' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid token.' });
+    }
+
+    req.user = user;
+    next();
+  });
+}
 
 // Create the products table if it doesn't exist
 db.schema
@@ -40,7 +137,7 @@ db.schema
   });
 
 // Products routes
-app.get('/products', (req, res) => {
+app.get('/products', authenticateToken, (req, res) => {
   // Retrieve all products from the database
   db.select('*')
     .from('products')
@@ -52,7 +149,7 @@ app.get('/products', (req, res) => {
     });
 });
 
-app.get('/products/:id', (req, res) => {
+app.get('/products/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
 
   // Retrieve a product by ID from the database
@@ -72,7 +169,7 @@ app.get('/products/:id', (req, res) => {
     });
 });
 
-app.post('/products', (req, res) => {
+app.post('/products', authenticateToken, (req, res) => {
   const { name, price, quantity } = req.body;
 
   // Insert a new product into the database
@@ -86,7 +183,7 @@ app.post('/products', (req, res) => {
     });
 });
 
-app.put('/products/:id', (req, res) => {
+app.put('/products/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, price, quantity } = req.body;
 
@@ -106,7 +203,7 @@ app.put('/products/:id', (req, res) => {
     });
 });
 
-app.delete('/products/:id', (req, res) => {
+app.delete('/products/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
 
   // Delete a product from the database

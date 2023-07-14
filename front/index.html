@@ -40,10 +40,77 @@
       display: inline-block;
       cursor: pointer;
     }
+
+    .login-form,
+    .register-form {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      margin-bottom: 5px;
+    }
+
+    .form-group input {
+      padding: 5px;
+    }
+
+    .form-group button {
+      margin-top: 10px;
+      padding: 8px 16px;
+    }
+
+    .message {
+      margin-top: 10px;
+      color: red;
+    }
   </style>
 </head>
 <body>
   <h1>Supermarket Products</h1>
+
+  <div id="loginContainer">
+    <h2>Login</h2>
+    <form id="loginForm" class="login-form">
+      <div class="form-group">
+        <label for="loginUsername">Username:</label>
+        <input type="text" id="loginUsername" required>
+      </div>
+
+      <div class="form-group">
+        <label for="loginPassword">Password:</label>
+        <input type="password" id="loginPassword" required>
+      </div>
+
+      <button type="submit">Login</button>
+      <p class="message" id="loginMessage"></p>
+    </form>
+  </div>
+
+  <div id="registerContainer">
+    <h2>Register</h2>
+    <form id="registerForm" class="register-form">
+      <div class="form-group">
+        <label for="registerUsername">Username:</label>
+        <input type="text" id="registerUsername" required>
+      </div>
+
+      <div class="form-group">
+        <label for="registerPassword">Password:</label>
+        <input type="password" id="registerPassword" required>
+      </div>
+
+      <button type="submit">Register</button>
+      <p class="message" id="registerMessage"></p>
+    </form>
+  </div>
 
   <form id="addForm">
     <label for="name">Product Name:</label>
@@ -57,7 +124,6 @@
 
     <button type="submit">Add Product</button>
   </form>
-
 
   <table id="productTable">
     <thead>
@@ -73,13 +139,21 @@
   </table>
 
   <script>
-    const apiUrl = 'http://localhost:3000'; // Replace with your API URL
+    document.addEventListener('DOMContentLoaded', () => {
+      const apiUrl = 'http://localhost:3000'; // Replace with your API URL
 
-    // Function to fetch and display products
-    function fetchProducts() {
-      fetch(`${apiUrl}/products`)
+      // Function to fetch and display products
+      function fetchProducts(token) {
+        console.log('Fetching products...');
+
+        fetch(`${apiUrl}/products`, {
+          headers: {
+            'Authorization': `Bearer ${token}` // Include the token in the request headers
+          }
+        })
         .then(response => response.json())
         .then(products => {
+          console.log('Products:', products);
           const tableBody = document.querySelector('#productTable tbody');
           tableBody.innerHTML = '';
 
@@ -100,89 +174,193 @@
         .catch(error => {
           console.error('Error:', error);
         });
-    }
+      }
 
-    // Function to delete a product
-    function deleteProduct(productId) {
-      fetch(`${apiUrl}/products/${productId}`, {
-        method: 'DELETE'
-      })
+      function deleteProduct(productId) {
+        fetch(`${apiUrl}/products/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
         .then(response => response.json())
         .then(data => {
           console.log(data.message);
-          fetchProducts();
+          fetchProducts(localStorage.getItem('token'));
         })
         .catch(error => {
           console.error('Error:', error);
         });
-    }
+      }
 
-    // Function to edit a product
-    function editProduct(productId, name, price, quantity) {
-      const newName = prompt('Enter new name:', name);
-      const newPrice = prompt('Enter new price:', price);
-      const newQuantity = prompt('Enter new quantity:', quantity);
+      // Function to edit a product
+      function editProduct(productId, productName, productPrice, productQuantity) {
+        const name = prompt('Enter new name:', productName);
+        const price = parseFloat(prompt('Enter new price:', productPrice));
+        const quantity = parseInt(prompt('Enter new quantity:', productQuantity));
 
-      if (newName && newPrice && newQuantity) {
-        const product = {
-          name: newName,
-          price: parseFloat(newPrice),
-          quantity: parseInt(newQuantity)
+        if (name && price && quantity) {
+          const updatedProduct = {
+            name,
+            price,
+            quantity
         };
 
         fetch(`${apiUrl}/products/${productId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify(product)
+          body: JSON.stringify(updatedProduct)
         })
           .then(response => response.json())
           .then(data => {
             console.log(data.message);
-            fetchProducts();
+            fetchProducts(localStorage.getItem('token'));
           })
           .catch(error => {
             console.error('Error:', error);
           });
+        }
       }
-    }
 
-    // Function to add a new product
-    document.getElementById('addForm').addEventListener('submit', function(event) {
-      event.preventDefault();
+      // Function to add a product
+      function addProduct(event) {
+        event.preventDefault();
 
-      const name = document.getElementById('name').value;
-      const price = document.getElementById('price').value;
-      const quantity = document.getElementById('quantity').value;
+        const name = document.querySelector('#name').value;
+        const price = parseFloat(document.querySelector('#price').value);
+        const quantity = parseInt(document.querySelector('#quantity').value);
 
-      const product = {
-        name,
-        price: parseFloat(price),
-        quantity: parseInt(quantity)
-      };
+        if (name && price && quantity) {
+          const newProduct = {
+            name,
+            price,
+            quantity
+          };
 
-      fetch(`${apiUrl}/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(product)
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data.message);
-          fetchProducts(); // Fetch and display all products again
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        });
+          fetch(`${apiUrl}/products`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(newProduct)
+          })
+            .then(response => response.json())
+            .then(data => {
+              console.log(data.message);
+              fetchProducts(localStorage.getItem('token'));
+              document.querySelector('#addForm').reset();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            });
+        }
+      }
 
-      this.reset();
+      // Function to handle login
+      function handleLogin(event) {
+        event.preventDefault();
+
+        const username = document.querySelector('#loginUsername').value;
+        const password = document.querySelector('#loginPassword').value;
+
+        if (username && password) {
+          const user = {
+            username,
+            password
+          };
+
+          fetch(`${apiUrl}/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(user)
+          })
+            .then(response => response.json())
+            .then(data => {
+              const { token } = data;
+
+              if (token) {
+                localStorage.setItem('token', token);
+                document.querySelector('#loginForm').reset();
+                document.querySelector('#loginMessage').textContent = '';
+                showApp();
+              } else {
+                document.querySelector('#loginMessage').textContent = 'Invalid username or password.';
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            });
+        }
+      }
+
+      // Function to handle registration
+      function handleRegister(event) {
+        event.preventDefault();
+
+        const username = document.querySelector('#registerUsername').value;
+        const password = document.querySelector('#registerPassword').value;
+
+        if (username && password) {
+          const user = {
+            username,
+            password
+          };
+
+          fetch(`${apiUrl}/register`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(user)
+          })
+            .then(response => response.json())
+            .then(data => {
+              console.log(data.message);
+              document.querySelector('#registerForm').reset();
+              document.querySelector('#registerMessage').textContent = '';
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            });
+        }
+      }
+
+      // Function to show/hide app based on token presence
+      function showApp() {
+        const token = localStorage.getItem('token');
+        const loginContainer = document.querySelector('#loginContainer');
+        const registerContainer = document.querySelector('#registerContainer');
+        const productTable = document.querySelector('#productTable');
+        const addForm = document.querySelector('#addForm');
+
+        if (token) {
+          loginContainer.style.display = 'none';
+          registerContainer.style.display = 'none';
+          productTable.style.display = 'table';
+          addForm.style.display = 'block';
+          fetchProducts(token);
+        } else {
+          loginContainer.style.display = 'block';
+          registerContainer.style.display = 'block';
+          productTable.style.display = 'none';
+          addForm.style.display = 'none';
+        }
+      }
+
+      // Check if the user is already logged in
+      showApp();
+
+      // Event listeners
+      document.querySelector('#addForm').addEventListener('submit', addProduct);
+      document.querySelector('#loginForm').addEventListener('submit', handleLogin);
+      document.querySelector('#registerForm').addEventListener('submit', handleRegister);
     });
-
-    // Fetch and display products on page load
-    fetchProducts();
   </script>
 </body>
 </html>
