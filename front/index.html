@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supermarket Products</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .delete-button {
+      background-color: #ff4d4d;
+      border: none;
+      color: #fff;
+      padding: 6px 12px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Supermarket Products</h1>
+
+  <form id="addForm">
+    <label for="name">Product Name:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="price">Price:</label>
+    <input type="number" id="price" name="price" step="0.01" required>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" name="quantity" required>
+
+    <button type="submit">Add Product</button>
+  </form>
+
+
+  <table id="productTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <script>
+    const apiUrl = 'http://localhost:3000'; // Replace with your API URL
+
+    // Function to fetch and display products
+    function fetchProducts() {
+      fetch(`${apiUrl}/products`)
+        .then(response => response.json())
+        .then(products => {
+          const tableBody = document.querySelector('#productTable tbody');
+          tableBody.innerHTML = '';
+
+          products.forEach(product => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${product.name}</td>
+              <td>${product.price}</td>
+              <td>${product.quantity}</td>
+              <td>
+                <button class="delete-button" onclick="deleteProduct(${product.id})">Delete</button>
+                <button onclick="editProduct(${product.id}, '${product.name}', ${product.price}, ${product.quantity})">Edit</button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Function to delete a product
+    function deleteProduct(productId) {
+      fetch(`${apiUrl}/products/${productId}`, {
+        method: 'DELETE'
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data.message);
+          fetchProducts();
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Function to edit a product
+    function editProduct(productId, name, price, quantity) {
+      const newName = prompt('Enter new name:', name);
+      const newPrice = prompt('Enter new price:', price);
+      const newQuantity = prompt('Enter new quantity:', quantity);
+
+      if (newName && newPrice && newQuantity) {
+        const product = {
+          name: newName,
+          price: parseFloat(newPrice),
+          quantity: parseInt(newQuantity)
+        };
+
+        fetch(`${apiUrl}/products/${productId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(product)
+        })
+          .then(response => response.json())
+          .then(data => {
+            console.log(data.message);
+            fetchProducts();
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
+    }
+
+    // Function to add a new product
+    document.getElementById('addForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const price = document.getElementById('price').value;
+      const quantity = document.getElementById('quantity').value;
+
+      const product = {
+        name,
+        price: parseFloat(price),
+        quantity: parseInt(quantity)
+      };
+
+      fetch(`${apiUrl}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(product)
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data.message);
+          fetchProducts(); // Fetch and display all products again
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+
+      this.reset();
+    });
+
+    // Fetch and display products on page load
+    fetchProducts();
+  </script>
+</body>
+</html>
