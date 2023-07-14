@@ -80,58 +80,58 @@
     <h2>Login</h2>
     <form id="loginForm" class="login-form">
       <div class="form-group">
-        <label for="loginUsername">Username:</label>
+        <label for="loginUsername">user:</label>
         <input type="text" id="loginUsername" required>
       </div>
 
       <div class="form-group">
-        <label for="loginPassword">Password:</label>
+        <label for="loginPassword">senha:</label>
         <input type="password" id="loginPassword" required>
       </div>
 
-      <button type="submit">Login</button>
+      <button type="submit">entrar</button>
       <p class="message" id="loginMessage"></p>
     </form>
   </div>
 
   <div id="registerContainer">
-    <h2>Register</h2>
+    <h2>cadastro</h2>
     <form id="registerForm" class="register-form">
       <div class="form-group">
-        <label for="registerUsername">Username:</label>
+        <label for="registerUsername">user:</label>
         <input type="text" id="registerUsername" required>
       </div>
 
       <div class="form-group">
-        <label for="registerPassword">Password:</label>
+        <label for="registerPassword">senha:</label>
         <input type="password" id="registerPassword" required>
       </div>
 
-      <button type="submit">Register</button>
+      <button type="submit">registrar</button>
       <p class="message" id="registerMessage"></p>
     </form>
   </div>
 
   <form id="addForm">
-    <label for="name">Product Name:</label>
+    <label for="name">nome do produto:</label>
     <input type="text" id="name" name="name" required>
 
-    <label for="price">Price:</label>
+    <label for="price">valor:</label>
     <input type="number" id="price" name="price" step="0.01" required>
 
-    <label for="quantity">Quantity:</label>
+    <label for="quantity">quantidade:</label>
     <input type="number" id="quantity" name="quantity" required>
 
-    <button type="submit">Add Product</button>
+    <button type="submit">adicionar produto</button>
   </form>
 
   <table id="productTable">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Action</th>
+        <th>nome</th>
+        <th>preço</th>
+        <th>quantidade</th>
+        <th>ações</th>
       </tr>
     </thead>
     <tbody>
@@ -140,15 +140,14 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const apiUrl = 'http://localhost:3000'; // Replace with your API URL
+      const apiUrl = 'http://localhost:3000'; 
 
-      // Function to fetch and display products
       function fetchProducts(token) {
         console.log('Fetching products...');
 
         fetch(`${apiUrl}/products`, {
           headers: {
-            'Authorization': `Bearer ${token}` // Include the token in the request headers
+            'Authorization': `Bearer ${token}` 
           }
         })
         .then(response => response.json())
@@ -164,7 +163,7 @@
               <td>${product.price}</td>
               <td>${product.quantity}</td>
               <td>
-                <button class="delete-button" onclick="deleteProduct(event, ${product.id})">Delete</button>
+                <button class="delete-button" onclick="deleteProduct(${product.id})">Delete</button>
                 <button onclick="editProduct(event, ${product.id}, '${product.name}', ${product.price}, ${product.quantity})">Edit</button>
               </td>
             `;
@@ -195,13 +194,12 @@
         });
       }
 
-      // Function to edit a product
       function editProduct(event, productId, productName, productPrice, productQuantity) {
         event.preventDefault();
 
-        const name = prompt('Enter new name:', productName);
-        const price = parseFloat(prompt('Enter new price:', productPrice));
-        const quantity = parseInt(prompt('Enter new quantity:', productQuantity));
+        const name = prompt('insira o novo nome:', productName);
+        const price = parseFloat(prompt('insira o novo valor:', productPrice));
+        const quantity = parseInt(prompt('insira a nova quantidade:', productQuantity));
 
         if (name && price && quantity) {
           const updatedProduct = {
@@ -229,7 +227,6 @@
         }
       }
 
-      // Function to add a product
       function addProduct(event) {
         event.preventDefault();
 
@@ -264,7 +261,6 @@
         }
       }
 
-      // Function to handle login
       function handleLogin(event) {
         event.preventDefault();
 
@@ -303,7 +299,6 @@
         }
       }
 
-      // Function to handle registration
       function handleRegister(event) {
         event.preventDefault();
 
@@ -335,7 +330,6 @@
         }
       }
 
-      // Function to show/hide app based on token presence
       function showApp() {
         const token = localStorage.getItem('token');
         const loginContainer = document.querySelector('#loginContainer');
@@ -357,10 +351,8 @@
         }
       }
 
-      // Check if the user is already logged in
       showApp();
 
-      // Event listeners
       document.querySelector('#addForm').addEventListener('submit', addProduct);
       document.querySelector('#loginForm').addEventListener('submit', handleLogin);
       document.querySelector('#registerForm').addEventListener('submit', handleRegister);

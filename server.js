@@ -1,4 +1,3 @@
-// Import required packages
 const express = require('express');
 const cors = require('cors');
 const knex = require('knex');
@@ -6,21 +5,18 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-// Create the Express app
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Create the SQLite3 database connection
 const db = knex({
   client: 'sqlite3',
   connection: {
-    filename: './mydatabase.db', // Replace with the path to your SQLite database file
+    filename: './mydatabase.db',
   },
   useNullAsDefault: true,
 });
 
-// Create the users table if it doesn't exist
 db.schema
   .hasTable('users')
   .then((exists) => {
@@ -39,19 +35,15 @@ db.schema
     console.error('Error creating users table:', error);
   });
 
-// Register a new user
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
 
-  // Validate request body
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' });
   }
 
-  // Hash the password
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  // Insert the user into the database
   db('users')
     .insert({ username, password: hashedPassword })
     .then(() => {
@@ -66,12 +58,10 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  // Validate request body
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' });
   }
 
-  // Find the user by username in the database
   db.select('*')
     .from('users')
     .where({ username })
@@ -81,14 +71,12 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ message: 'Invalid username or password.' });
       }
 
-      // Compare the provided password with the hashed password in the database
       const isPasswordValid = bcrypt.compareSync(password, user.password);
 
       if (!isPasswordValid) {
         return res.status(401).json({ message: 'Invalid username or password.' });
       }
 
-      // Generate a JWT token
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
       res.json({ token });
@@ -98,9 +86,8 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Middleware to verify JWT token
 function authenticateToken(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1];
+  const token = req.headers.authorization.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({ message: 'Token not found.' });
@@ -116,7 +103,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Create the products table if it doesn't exist
 db.schema
   .hasTable('products')
   .then((exists) => {
@@ -136,9 +122,7 @@ db.schema
     console.error('Error creating products table:', error);
   });
 
-// Products routes
 app.get('/products', authenticateToken, (req, res) => {
-  // Retrieve all products from the database
   db.select('*')
     .from('products')
     .then((products) => {
@@ -152,7 +136,6 @@ app.get('/products', authenticateToken, (req, res) => {
 app.get('/products/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
 
-  // Retrieve a product by ID from the database
   db.select('*')
     .from('products')
     .where({ id })
@@ -172,7 +155,6 @@ app.get('/products/:id', authenticateToken, (req, res) => {
 app.post('/products', authenticateToken, (req, res) => {
   const { name, price, quantity } = req.body;
 
-  // Insert a new product into the database
   db('products')
     .insert({ name, price, quantity })
     .then(() => {
@@ -187,7 +169,6 @@ app.put('/products/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, price, quantity } = req.body;
 
-  // Update a product in the database
   db('products')
     .where({ id })
     .update({ name, price, quantity })
@@ -206,7 +187,6 @@ app.put('/products/:id', authenticateToken, (req, res) => {
 app.delete('/products/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
 
-  // Delete a product from the database
   db('products')
     .where({ id })
     .del()
@@ -222,7 +202,6 @@ app.delete('/products/:id', authenticateToken, (req, res) => {
     });
 });
 
-// Start the server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
