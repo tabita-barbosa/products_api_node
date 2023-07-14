@@ -164,8 +164,8 @@
               <td>${product.price}</td>
               <td>${product.quantity}</td>
               <td>
-                <button class="delete-button" onclick="deleteProduct(${product.id})">Delete</button>
-                <button onclick="editProduct(${product.id}, '${product.name}', ${product.price}, ${product.quantity})">Edit</button>
+                <button class="delete-button" onclick="deleteProduct(event, ${product.id})">Delete</button>
+                <button onclick="editProduct(event, ${product.id}, '${product.name}', ${product.price}, ${product.quantity})">Edit</button>
               </td>
             `;
             tableBody.appendChild(row);
@@ -175,8 +175,10 @@
           console.error('Error:', error);
         });
       }
+      
+      function deleteProduct(event, productId) {
+        event.preventDefault();
 
-      function deleteProduct(productId) {
         fetch(`${apiUrl}/products/${productId}`, {
           method: 'DELETE',
           headers: {
@@ -194,7 +196,9 @@
       }
 
       // Function to edit a product
-      function editProduct(productId, productName, productPrice, productQuantity) {
+      function editProduct(event, productId, productName, productPrice, productQuantity) {
+        event.preventDefault();
+
         const name = prompt('Enter new name:', productName);
         const price = parseFloat(prompt('Enter new price:', productPrice));
         const quantity = parseInt(prompt('Enter new quantity:', productQuantity));
@@ -204,16 +208,16 @@
             name,
             price,
             quantity
-        };
+          };
 
-        fetch(`${apiUrl}/products/${productId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(updatedProduct)
-        })
+          fetch(`${apiUrl}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(updatedProduct)
+          })
           .then(response => response.json())
           .then(data => {
             console.log(data.message);
